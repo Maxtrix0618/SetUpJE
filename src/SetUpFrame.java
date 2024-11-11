@@ -8,16 +8,14 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Stream;
 import javax.swing.*;
+import javax.swing.plaf.ColorUIResource;
 
 /**
  * SetUpEXE: jar -> exe
  * by Paperfish, 2024.11.11
- * Test 11.11
  */
 public class SetUpFrame extends JFrame {
     private static final Font Font1 = new Font("Microsoft YaHei", Font.PLAIN, 14);
@@ -37,13 +35,12 @@ public class SetUpFrame extends JFrame {
     private static final String Vendor = "供应商：";
     private static final String Copyright = "版权信息：";
     private static final String Description = "应用描述：";
-    private final StringBuilder hint = new StringBuilder();
+    private final StringBuilder help = new StringBuilder();
     private final Map<String, JTextField> IF = new HashMap<>();
     private final Map<String, JLabel> IT = new HashMap<>();
     private final JTextArea cmdBack = new JTextArea();
     private JButton gJREb = new JButton();
     private int Y = 20;
-    private int X = 42;
 
     public SetUpFrame() {
         setTitle("SetUpEXE: jar -> exe");
@@ -59,12 +56,13 @@ public class SetUpFrame extends JFrame {
 
     /**
      * Initial configuration of the program, including the use of windows style pop-ups,
-     * the use of default path configuration, and hint messages
+     * the use of default path configuration, and help messages
      */
     private void preconfigure() {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            Files.readAllLines(Path.of("./resource/hint.txt")).forEach((e) -> hint.append(e).append("\n"));
+            UIManager.put("Button.focus", new ColorUIResource(new Color(0, 0, 0, 0)));
+            Files.readAllLines(Path.of("./resource/help.txt")).forEach((e) -> help.append(e).append("\n"));
             List<String> defaultPaths = Files.readAllLines(Path.of("./resource/default.txt"));
             fill(ProjectFolder, defaultPaths.get(0));
             fill(OutputFolder, defaultPaths.get(1));
@@ -77,7 +75,7 @@ public class SetUpFrame extends JFrame {
     private void addComponents() {
         addLabel(Name, 20, Y, 100, 180);
         addText(".exe", 305, Y, 40, D_GRAY);
-        addHintButton();
+        addHelpButton();
         addLine("预设", Y += 30);
         addLabel(ProjectFolder, 20, Y += 25, 100, 280);
         addLine("", Y += 20);
@@ -113,8 +111,8 @@ public class SetUpFrame extends JFrame {
         IF.put(text, field);
         add(field);
     }
-    private void addLine(String hint, int y) {
-        addText("——" + hint + "—".repeat(26 - hint.length()), 15, y, 460, GRAY);
+    private void addLine(String item, int y) {
+        addText("——" + item + "—".repeat(26 - item.length()), 15, y, 460, GRAY);
     }
     private void addText(String text, int x, int y, int tw, Color foreground) {
         JLabel label = new JLabel(text);
@@ -127,11 +125,11 @@ public class SetUpFrame extends JFrame {
     }
 
     /**
-     * The button to show Hint message.
+     * The button to show Help message.
      */
-    private void addHintButton() {
-        JButton button = newButton("Hint", 370, Y, 70, 24, Font2);
-        button.addActionListener((e) -> JOptionPane.showMessageDialog(this, hint, "Hint", JOptionPane.INFORMATION_MESSAGE));
+    private void addHelpButton() {
+        JButton button = newButton("Help", 370, Y, 70, 24, Font2);
+        button.addActionListener((e) -> JOptionPane.showMessageDialog(this, help, "帮助", JOptionPane.INFORMATION_MESSAGE));
         add(button);
     }
 
@@ -229,9 +227,19 @@ public class SetUpFrame extends JFrame {
         add(button);
     }
 
+    /**
+     * Fill the item with the given text.
+     */
     private void fill(String item, String text) {
         IF.get(item).setText(text);
         IT.get(item).setForeground(D_GRAY);
+    }
+
+    /**
+     * Check if there is already text there before fill(), if so, do not fill.
+     */
+    private void tryFill(String item, String text) {
+        if (IF.get(item).getText().isEmpty()) fill(item, text);
     }
 
     /**
@@ -240,11 +248,10 @@ public class SetUpFrame extends JFrame {
     private void completeSomePaths() {
         String pf = IF.get(ProjectFolder).getText();
         if (!pf.isBlank()) {
-            fill(Name, pf.substring(pf.lastIndexOf(92) + 1));
-            fill(JarPath, firstFileIn(pf + "\\out\\artifacts", ".jar", 16));
-            fill(IconPath, firstFileIn(pf + "\\resource", ".ico", 16));
-            if (IF.get(OutputFolder).getText().isEmpty())
-                fill(OutputFolder, pf + "\\out");
+            tryFill(Name, pf.substring(pf.lastIndexOf(92) + 1));
+            tryFill(JarPath, firstFileIn(pf + "\\out\\artifacts", ".jar", 16));
+            tryFill(IconPath, firstFileIn(pf + "\\resource", ".ico", 16));
+            tryFill(OutputFolder, pf + "\\out");
         }
     }
 
@@ -265,10 +272,10 @@ public class SetUpFrame extends JFrame {
 
                 StringBuilder command = new StringBuilder("jpackage --type app-image");
                 command.append(" --input \"").append(jarFolder)
-                       .append("\" --main-jar \"").append(jar)
-                       .append("\" --runtime-image \"").append(IF.get(JrePath).getText().trim())
-                       .append("\" --dest \"").append(IF.get(OutputFolder).getText().trim())
-                       .append("\" --name \"").append(IF.get(Name).getText().trim()).append("\"");
+                        .append("\" --main-jar \"").append(jar)
+                        .append("\" --runtime-image \"").append(IF.get(JrePath).getText().trim())
+                        .append("\" --dest \"").append(IF.get(OutputFolder).getText().trim())
+                        .append("\" --name \"").append(IF.get(Name).getText().trim()).append("\"");
                 tryAppend(command, " --icon ", IconPath);
                 tryAppend(command, " --app-version ", Version);
                 tryAppend(command, " --vendor ", Vendor);
@@ -276,7 +283,7 @@ public class SetUpFrame extends JFrame {
                 tryAppend(command, " --description ", Description);
                 String[] exe_back = CMD(command.toString());
                 if (!exe_back[1].equals("0")) {
-                    JOptionPane.showMessageDialog(this, "构建失败", "Error", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "构建失败，请检查命令行", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
                     JOptionPane.showMessageDialog(this, "成功构建exe到输出目录", "Done!", JOptionPane.INFORMATION_MESSAGE);
                 }
@@ -389,11 +396,11 @@ public class SetUpFrame extends JFrame {
         if (isValidJRE(jrePath)) {caution.append("\n").append(jrePath); deleteJRE = true;}
         if (!validPath(jarPath, ".jar").isEmpty()) {caution.append("\n").append(jarPath); deleteJAR = true;}
         if (!deleteJRE && !deleteJAR) {
-            JOptionPane.showMessageDialog(this, "没有需要清除的缓存文件", "Hint", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "没有需要清除的缓存文件", "ClearCF", JOptionPane.INFORMATION_MESSAGE);
         } else if (JOptionPane.showConfirmDialog(this, caution, "Confirm", JOptionPane.OK_CANCEL_OPTION) == 0) {
             if (deleteJRE) deleteFolder(jrePath);
             if (deleteJAR) deleteFolder(jarPath);
-            JOptionPane.showMessageDialog(this, "已清除缓存文件", "Hint", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "已清除缓存文件", "ClearCF", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 
@@ -401,12 +408,19 @@ public class SetUpFrame extends JFrame {
      * Delete the folder pointed to by the path and all sub-folders and files under it.<br/>
      * Please use this method carefully! Be sure to check that the file path you want to delete is correct.
      */
-    private static void deleteFolder(String folderPath) {
+    private void deleteFolder(String folderPath) {
         if (!folderPath.isBlank() && Files.exists(Path.of(folderPath))) {
-            try {
-                Files.walk(Path.of(folderPath))
-                        .sorted(Comparator.reverseOrder())
-                        .map(Path::toFile).forEach(File::delete);
+            try (Stream<Path> paths = Files.walk(Path.of(folderPath))) {
+                List<String> error = new ArrayList<>();
+                paths.sorted(Comparator.reverseOrder())
+                        .forEach(path -> {
+                            if (!path.toFile().delete()) error.add(String.valueOf(paths));
+                        });
+                if (!error.isEmpty()) {
+                    StringBuilder str = new StringBuilder("未能删除以下文件：");
+                    error.forEach(e -> str.append(e).append("\n"));
+                    JOptionPane.showMessageDialog(this, str, "Warning", JOptionPane.WARNING_MESSAGE);
+                }
             } catch (IOException ignored) {}
         }
     }
