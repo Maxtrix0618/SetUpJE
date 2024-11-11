@@ -17,6 +17,7 @@ import javax.swing.*;
 /**
  * SetUpEXE: jar -> exe
  * by Paperfish, 2024.11.11
+ * Test 11.11
  */
 public class SetUpFrame extends JFrame {
     private static final Font Font1 = new Font("Microsoft YaHei", Font.PLAIN, 14);
@@ -42,6 +43,7 @@ public class SetUpFrame extends JFrame {
     private final JTextArea cmdBack = new JTextArea();
     private JButton gJREb = new JButton();
     private int Y = 20;
+    private int X = 42;
 
     public SetUpFrame() {
         setTitle("SetUpEXE: jar -> exe");
