@@ -66,6 +66,7 @@ public class SetUpFrame extends JFrame {
             List<String> defaultPaths = Files.readAllLines(Path.of("./resource/default.txt"));
             fill(ProjectFolder, defaultPaths.get(0));
             fill(OutputFolder, defaultPaths.get(1));
+            fill(Vendor, defaultPaths.get(2));
         } catch (Exception ignored) {}
     }
 
@@ -172,10 +173,10 @@ public class SetUpFrame extends JFrame {
                     }
                     String[] jre_back = CMD("jlink --no-header-files --no-man-pages --add-modules " + jm_back[0] + " --output " + tryJreFolder);
                     if (!jre_back[1].equals("0")) {
-                        JOptionPane.showMessageDialog(this, "未能生成Jre", "Error", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(this, "未能生成Jre包", "Error", JOptionPane.ERROR_MESSAGE);
                         return;
                     }
-                    JOptionPane.showMessageDialog(this, "已更新Jre", "Done!", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "已更新Jre包", "Done!", JOptionPane.INFORMATION_MESSAGE);
                     fill(JrePath, tryJreFolder);
                     IF.get(JrePath).setVisible(true);
                     gJREb.setVisible(false);
