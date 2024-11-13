@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="SetUpJE:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/SetUpJE_jar</output-path>
+    <root id="archive" name="SetUpJE.jar">
+      <element id="module-output" name="SetUpJE" />
+    </root>
+  </artifact>
+</component>

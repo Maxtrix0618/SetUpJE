@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -286,7 +287,7 @@ public class SetUpFrame extends JFrame {
                 if (!exe_back[1].equals("0")) {
                     JOptionPane.showMessageDialog(this, "构建失败，请检查命令行", "Error", JOptionPane.ERROR_MESSAGE);
                 } else {
-                    JOptionPane.showMessageDialog(this, "成功构建exe到输出目录", "Done!", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "成功构建程序包到输出目录", "Done!", JOptionPane.INFORMATION_MESSAGE);
                 }
 
             }
@@ -367,16 +368,17 @@ public class SetUpFrame extends JFrame {
     private String[] CMD(String command) {
         cmdBack.append(command);
         String endCode = "";
+        String line;
         StringBuilder result = new StringBuilder();
         Runtime runtime = Runtime.getRuntime();
         try {
             Process process = runtime.exec(command);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while((line = reader.readLine()) != null) {
-                result.append(line).append("\n");
-            }
+            BufferedReader outReader = new BufferedReader(new InputStreamReader(process.getInputStream(), Charset.forName("GBK")));
+            BufferedReader errReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), Charset.forName("GBK")));
+            while((line = outReader.readLine()) != null) result.append(line).append("\n");
+            while((line = errReader.readLine()) != null) result.append(line).append("\n");
             endCode = String.valueOf(process.waitFor());
+
             cmdBack.append(result.toString());
             cmdBack.append("\n" + endCode + "\n\n");
         } catch (InterruptedException | IOException ex) {
